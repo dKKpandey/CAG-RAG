@@ -103,7 +103,7 @@
   <text x="1000" y="671" font-family="ui-monospace, monospace" font-size="9.5" fill="#7F1D1D">volume: redis_data</text>
 
   <rect x="970" y="710" width="280" height="85" rx="12" fill="#F3E8FF" stroke="#7E22CE" stroke-width="1.5"/>
-  <text x="1000" y="738" font-family="ui-monospace, monospace" font-size="14" font-weight="700" fill="#6B21A8">qdrant:v1.9.2</text>
+  <text x="1000" y="738" font-family="ui-monospace, monospace" font-size="14" font-weight="700" fill="#6B21A8">qdrant:v1.19.2</text>
   <text x="1000" y="755" font-family="ui-monospace, monospace" font-size="10.5" fill="#581C87">:6333 &#8212; RAG vectors</text>
   <text x="1000" y="771" font-family="ui-monospace, monospace" font-size="9.5" fill="#581C87">volume: qdrant_data</text>
 

@@ -308,7 +308,7 @@ flowchart TB
     subgraph Compose["docker-compose.yml — cag-rag-stack"]
         AppC["app\nFastAPI :8000"]
         RedisC[("redis:7-alpine\n:6379")]
-        QdrantC[("qdrant:v1.9.2\n:6333")]
+        QdrantC[("qdrant:v1.19.2\n:6333")]
     end
     Client(("Client")) -- ":8000" --> AppC
     AppC --> RedisC
