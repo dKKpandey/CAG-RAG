@@ -18,3 +18,5 @@ select = ["E", "F", "I", "UP"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = ["integration: requires a real Redis/Qdrant (see tests/integration/README.md)"]
+addopts = "-m 'not integration'"

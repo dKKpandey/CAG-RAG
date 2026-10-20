@@ -4,9 +4,26 @@ from langchain_qdrant import QdrantVectorStore as LCQdrant
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
 
+from app.core.errors import ConfigurationError
 from app.embeddings.base import EmbeddingProvider
 from app.embeddings.langchain_adapter import LangChainEmbeddingsAdapter
 from app.vectorstore.base import RetrievedChunk, VectorStore
+
+
+def validate_embedding_dimension(embedding_provider: EmbeddingProvider, expected_dim: int) -> None:
+    """Fail fast and clearly instead of letting Qdrant reject every insert
+    later with a terser dimension-mismatch error. Costs one real embedding
+    call. A standalone function (rather than a method) so it's unit-testable
+    without a live Qdrant connection — see tests/test_vectorstore.py."""
+
+    actual_dim = len(embedding_provider.embed_query("dimension probe"))
+    if actual_dim != expected_dim:
+        raise ConfigurationError(
+            f"EMBEDDING_DIM is set to {expected_dim}, but the configured "
+            f"embedding model actually returns {actual_dim}-dimensional "
+            f"vectors. Update EMBEDDING_DIM in your .env to match, or set "
+            f"VALIDATE_EMBEDDING_DIM=false to skip this check."
+        )
 
 
 class QdrantStore(VectorStore):
@@ -20,9 +37,14 @@ class QdrantStore(VectorStore):
         collection: str,
         embedding_provider: EmbeddingProvider,
         embedding_dim: int,
+        validate_dimension: bool = True,
     ):
         self._client = QdrantClient(url=url, api_key=api_key)
         self._collection = collection
+        if validate_dimension:
+            # Once per process (this class is a cached singleton — see
+            # app/api/deps.py), not once per request.
+            validate_embedding_dimension(embedding_provider, embedding_dim)
         self._ensure_collection(embedding_dim)
         self._embeddings = LangChainEmbeddingsAdapter(embedding_provider)
         self._store = LCQdrant(

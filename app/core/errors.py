@@ -33,6 +33,25 @@ class ProviderError(AppError):
     status_code = 502
 
 
+class RateLimitExceededError(AppError):
+    """Too many requests from this API key within the current window."""
+
+    status_code = 429
+
+
+class BudgetExceededError(AppError):
+    """This API key has used its configured daily token budget."""
+
+    status_code = 429
+
+
+class ConfigurationError(AppError):
+    """A misconfiguration that would otherwise fail confusingly later
+    (e.g. EMBEDDING_DIM not matching the active embedding model)."""
+
+    status_code = 500
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def handle_app_error(request: Request, exc: AppError) -> JSONResponse:

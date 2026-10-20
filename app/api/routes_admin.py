@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends
 
-from app.api.deps import get_cache_store
+from app.api.deps import get_authenticated_client, get_cache_store
 from app.cache.base import CacheStore
 from app.core.config import Settings, get_settings
-from app.core.security import require_api_key
 from app.pipeline.cag import preload_cold_sources
 from app.schemas.models import PreloadCacheResponse
 
@@ -13,7 +12,7 @@ router = APIRouter(prefix="/v1/admin", tags=["admin"])
 @router.post(
     "/preload-cache",
     response_model=PreloadCacheResponse,
-    dependencies=[Depends(require_api_key)],
+    dependencies=[Depends(get_authenticated_client)],
 )
 def preload_cache(
     cache_store: CacheStore = Depends(get_cache_store),

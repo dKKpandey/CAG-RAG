@@ -84,11 +84,27 @@ documents. Keeping them apart is deliberate:
    at any time without touching the cache that guarantees baseline answers
    keep working.
 
-## Where this is intentionally incomplete
+## What's actually been hardened vs. what's still a gap
 
-This is a reference implementation, not a hardened production deployment.
-Before shipping it for real traffic, you'd still want: streaming responses,
-per-tenant auth instead of one shared API key, rate limiting, retries with
-backoff around provider calls, observability (traces/metrics, not just
-logs), and a real document-management flow for hot ingestion (delete /
-versioning, not just upsert).
+This is a reference implementation, not a hardened production deployment —
+but it's no longer a bare prototype either:
+
+- **Done**: streaming (`POST /v1/query/stream`), named API keys with
+  independent rate limits and daily token budgets per caller
+  (`API_KEYS`, `RATE_LIMIT_PER_MINUTE`, `MAX_DAILY_TOKENS_PER_CLIENT`),
+  retries with backoff around every provider call, and a startup check
+  that `EMBEDDING_DIM` actually matches the configured embedding model.
+  See [docs/architecture-design.md §12](docs/architecture-design.md#12-security-model)
+  for how the auth/rate-limit/budget chain fits together.
+- **Verified against real infrastructure, not just fakes**: the test
+  suite's unit tests use fakes for everything (no credentials needed), but
+  `tests/integration/` runs the same code against real Redis and real
+  Qdrant containers — in CI, on every push, not just on request. What it
+  still can't verify without a paid key is the LLM/embedding calls
+  themselves; `scripts/smoke_test.py` is what you run yourself, against
+  your own running stack, to close that last gap.
+- **Still a gap**: per-tenant *data* isolation (separate API keys share one
+  cache namespace and one Qdrant collection), request signing, and a real
+  document-management flow for hot ingestion (delete/versioning, not just
+  upsert). See [docs/architecture-design.md §17](docs/architecture-design.md#17-open-questions--future-work)
+  for the full list.

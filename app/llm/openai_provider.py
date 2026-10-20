@@ -1,7 +1,9 @@
+from collections.abc import Iterator
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
+from app.core.retry import with_provider_retries
 from app.llm.base import ChatMessage, LLMProvider, LLMResponse, LLMUsage
 
 
@@ -24,6 +26,7 @@ class OpenAIProvider(LLMProvider):
             return SystemMessage(content=text)
         return HumanMessage(content=text)
 
+    @with_provider_retries
     def generate(
         self,
         messages: list[ChatMessage],
@@ -45,3 +48,16 @@ class OpenAIProvider(LLMProvider):
             cache_read_input_tokens=cached,
         )
         return LLMResponse(text=result.content, usage=usage, cache_hit=bool(cached))
+
+    def stream(
+        self,
+        messages: list[ChatMessage],
+        *,
+        max_tokens: int = 1024,
+        temperature: float = 0.2,
+    ) -> Iterator[str]:
+        lc_messages = [self._to_langchain_message(m) for m in messages]
+        stream = self._client.stream(lc_messages, max_tokens=max_tokens, temperature=temperature)
+        for chunk in stream:
+            if chunk.content:
+                yield chunk.content

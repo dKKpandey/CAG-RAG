@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends
 
-from app.api.deps import get_vector_store
+from app.api.deps import get_authenticated_client, get_vector_store
 from app.core.config import Settings, get_settings
-from app.core.security import require_api_key
 from app.ingestion.loaders import load_and_chunk_texts
 from app.schemas.models import IngestRequest, IngestResponse
 from app.vectorstore.base import VectorStore
@@ -10,7 +9,7 @@ from app.vectorstore.base import VectorStore
 router = APIRouter(prefix="/v1/documents", tags=["documents"])
 
 
-@router.post("", response_model=IngestResponse, dependencies=[Depends(require_api_key)])
+@router.post("", response_model=IngestResponse, dependencies=[Depends(get_authenticated_client)])
 def ingest_documents(
     payload: IngestRequest,
     vector_store: VectorStore = Depends(get_vector_store),

@@ -1,8 +1,13 @@
 from functools import lru_cache
 
+from fastapi import Depends
+
 from app.cache.base import CacheStore
 from app.cache.redis_store import RedisCacheStore
+from app.core.budget import check_budget
 from app.core.config import get_settings
+from app.core.rate_limit import enforce_rate_limit
+from app.core.security import ClientContext, require_api_key
 from app.embeddings.base import EmbeddingProvider
 from app.embeddings.factory import build_embedding_provider
 from app.llm.base import LLMProvider
@@ -32,6 +37,7 @@ def get_vector_store() -> VectorStore:
         collection=settings.qdrant_collection,
         embedding_provider=get_embedding_provider(),
         embedding_dim=settings.embedding_dim,
+        validate_dimension=settings.validate_embedding_dim,
     )
 
 
@@ -47,3 +53,15 @@ def get_pipeline() -> CagRagPipeline:
         llm_provider=get_llm_provider(),
         settings=get_settings(),
     )
+
+
+def get_authenticated_client(client: ClientContext = Depends(require_api_key)) -> ClientContext:
+    """Auth, then rate limit, then budget — in that order, so an unknown
+    key never consumes a rate-limit slot, and a rate-limited caller never
+    reaches the (more expensive) budget check."""
+
+    settings = get_settings()
+    cache_store = get_cache_store()
+    enforce_rate_limit(cache_store, settings, client.client_id)
+    check_budget(cache_store, settings, client.client_id)
+    return client

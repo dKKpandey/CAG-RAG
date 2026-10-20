@@ -19,3 +19,16 @@ def fake_vector_store():
 @pytest.fixture
 def fake_llm_provider():
     return FakeLLMProvider()
+
+
+@pytest.fixture(autouse=True)
+def _clear_dependency_overrides():
+    """Belt-and-braces: FastAPI's dependency_overrides is a plain dict on
+    the app object, not something a test framework resets automatically.
+    A test that forgets to clear it would silently leak stubs into every
+    test that runs after it in the same session."""
+
+    yield
+    from app.main import app
+
+    app.dependency_overrides.clear()

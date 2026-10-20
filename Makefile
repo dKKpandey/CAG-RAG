@@ -1,4 +1,4 @@
-.PHONY: install dev test lint up down preload ingest
+.PHONY: install dev test test-integration lint up down preload ingest quickstart smoke-test
 
 install:
 	pip install -r requirements.txt
@@ -8,6 +8,9 @@ dev:
 
 test:
 	pytest -v
+
+test-integration:
+	pytest -v -m integration
 
 lint:
 	ruff check .
@@ -23,3 +26,10 @@ preload:
 
 ingest:
 	python -m app.scripts.ingest_documents
+
+quickstart:
+	./scripts/quickstart.sh
+
+# Usage: make smoke-test API_KEY=dev-local-key
+smoke-test:
+	python scripts/smoke_test.py --api-key $(API_KEY)

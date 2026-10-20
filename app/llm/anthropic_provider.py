@@ -1,7 +1,9 @@
+from collections.abc import Iterator
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
+from app.core.retry import with_provider_retries
 from app.llm.base import ChatMessage, LLMProvider, LLMResponse, LLMUsage
 
 
@@ -34,6 +36,7 @@ class AnthropicProvider(LLMProvider):
             return AIMessage(content=content)
         return HumanMessage(content=content)
 
+    @with_provider_retries
     def generate(
         self,
         messages: list[ChatMessage],
@@ -63,3 +66,24 @@ class AnthropicProvider(LLMProvider):
             cache_creation_input_tokens=cache_creation,
         )
         return LLMResponse(text=text, usage=usage, cache_hit=cache_read > 0)
+
+    def stream(
+        self,
+        messages: list[ChatMessage],
+        *,
+        max_tokens: int = 1024,
+        temperature: float = 0.2,
+    ) -> Iterator[str]:
+        """Not wrapped in the provider retry policy: once tokens have started
+        reaching the client, re-running the whole call on a mid-stream error
+        would duplicate output rather than recover cleanly."""
+        lc_messages = [self._to_langchain_message(m) for m in messages]
+        stream = self._client.stream(lc_messages, max_tokens=max_tokens, temperature=temperature)
+        for chunk in stream:
+            if isinstance(chunk.content, str):
+                if chunk.content:
+                    yield chunk.content
+            else:
+                for part in chunk.content:
+                    if isinstance(part, dict) and part.get("text"):
+                        yield part["text"]

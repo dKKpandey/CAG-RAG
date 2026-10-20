@@ -29,3 +29,15 @@ def test_preload_truncates_to_max_chars(fake_cache_store, tmp_path):
     payload = cag.preload_cold_sources(fake_cache_store, str(tmp_path), "cag:cached_context", "v1", max_chars=50)
 
     assert len(payload["text"]) == 50
+
+
+def test_incr_starts_at_amount_and_accumulates(fake_cache_store):
+    assert fake_cache_store.incr("counter", amount=3) == 3
+    assert fake_cache_store.incr("counter", amount=4) == 7
+    assert fake_cache_store.get("counter") == "7"
+
+
+def test_incr_default_amount_is_one(fake_cache_store):
+    fake_cache_store.incr("hits")
+    fake_cache_store.incr("hits")
+    assert fake_cache_store.get("hits") == "2"

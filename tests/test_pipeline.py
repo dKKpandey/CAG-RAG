@@ -51,3 +51,20 @@ def test_pipeline_raises_when_cache_not_preloaded(fake_cache_store, fake_vector_
 
     with pytest.raises(CacheNotPreloadedError):
         pipeline.answer("Anything")
+
+
+def test_answer_stream_yields_sources_then_tokens_then_done(
+    fake_cache_store, fake_vector_store, fake_llm_provider
+):
+    fake_cache_store.set(
+        "cag:cached_context:v1", '{"text": "Stable fact.", "hash": "x", "files": []}'
+    )
+    pipeline = CagRagPipeline(fake_cache_store, fake_vector_store, fake_llm_provider, _settings())
+
+    events = list(pipeline.answer_stream("Any question"))
+
+    assert events[0]["type"] == "sources"
+    assert events[0]["sources"][0]["id"] == "doc-1"
+    token_events = [e for e in events if e["type"] == "token"]
+    assert "".join(e["token"] for e in token_events) == fake_llm_provider.canned_answer + " "
+    assert events[-1] == {"type": "done"}

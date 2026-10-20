@@ -11,8 +11,18 @@ class Settings(BaseSettings):
     # --- service ---
     app_name: str = "cag-rag-service"
     environment: Literal["development", "production", "test"] = "development"
-    api_key: str = Field(default="dev-local-key", description="Required in the X-API-Key header")
+    api_key: str = Field(
+        default="dev-local-key", description="Legacy single key, mapped to client 'default'"
+    )
+    api_keys: str = Field(
+        default="",
+        description="Additional 'key:client_id,key2:client_id2' pairs for multi-caller auth",
+    )
     log_level: str = "INFO"
+
+    # --- rate limiting & budget guardrails (per API key / client_id) ---
+    rate_limit_per_minute: int = 60  # 0 disables
+    max_daily_tokens_per_client: int = 0  # 0 disables (no cap)
 
     # --- LLM (generation) ---
     llm_provider: Literal["anthropic", "openai"] = "anthropic"
@@ -28,6 +38,10 @@ class Settings(BaseSettings):
     openai_embedding_model: str = "text-embedding-3-small"
     # Must match the output dimension of whichever embedding model is active.
     embedding_dim: int = 1024
+    # Probe the embedding provider once at startup and fail fast with a clear
+    # error if EMBEDDING_DIM doesn't match reality, instead of a confusing
+    # Qdrant error on the first real query. Costs one embedding call.
+    validate_embedding_dim: bool = True
 
     # --- Cache store (CAG) ---
     redis_url: str = "redis://localhost:6379/0"

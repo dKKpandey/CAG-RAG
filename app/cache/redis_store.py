@@ -19,6 +19,15 @@ class RedisCacheStore(CacheStore):
     def set(self, key: str, value: str, ttl: int | None = None) -> None:
         self._client.set(key, value, ex=ttl)
 
+    def incr(self, key: str, amount: int = 1, ttl: int | None = None) -> int:
+        value = self._client.incrby(key, amount)
+        if ttl and value == amount:
+            # First write of this window — this is the only point at which
+            # we know we just created the key, so it's the only safe place
+            # to attach an expiry without clobbering one set earlier.
+            self._client.expire(key, ttl)
+        return value
+
     def ping(self) -> bool:
         try:
             return bool(self._client.ping())

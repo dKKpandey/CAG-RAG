@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -52,3 +53,15 @@ class LLMProvider(ABC):
         max_tokens: int = 1024,
         temperature: float = 0.2,
     ) -> LLMResponse: ...
+
+    @abstractmethod
+    def stream(
+        self,
+        messages: list[ChatMessage],
+        *,
+        max_tokens: int = 1024,
+        temperature: float = 0.2,
+    ) -> Iterator[str]:
+        """Yield response text incrementally. Not covered by the provider
+        retry policy — see each implementation's docstring."""
+        ...
