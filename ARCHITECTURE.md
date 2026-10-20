@@ -1,5 +1,10 @@
 # Architecture
 
+This is the short version. For the full design document — system context,
+component design, sequence diagrams, deployment view, security model,
+failure modes, and the alternatives considered — see
+[docs/architecture-design.md](docs/architecture-design.md).
+
 ## Why CAG and RAG are both here
 
 RAG answers "what's true right now" by embedding the query and searching a

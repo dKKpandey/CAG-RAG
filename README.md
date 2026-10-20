@@ -7,7 +7,10 @@ both into one prompt, and generates an answer via a provider-agnostic LLM
 layer (Anthropic or OpenAI).
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for how the pieces fit together and
-why there are two separate stores instead of one.
+why there are two separate stores instead of one, or
+[docs/architecture-design.md](docs/architecture-design.md) for the full
+design document (system context, component design, sequence diagrams,
+deployment view, failure modes, and alternatives considered).
 
 ## Quickstart
 
